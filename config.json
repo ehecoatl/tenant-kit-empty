@@ -2,5 +2,6 @@
   "alias": [],
   "certbotEmail": null,
   "appRoutingMode": "subdomain",
-  "defaultAppName": "www"
+  "defaultAppName": "www",
+  "ehecoatlVersion": "0.1.0-beta"
 }

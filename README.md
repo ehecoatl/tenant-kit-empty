@@ -1,119 +1,45 @@
-# Minimal Tenant Kit
+# Empty Tenant Kit
 
-This tenant kit defines the first smoke-test tenant shape for Ehecoatl.
+This tenant kit defines the minimal versioned tenant baseline for Ehecoatl.
 
-`config.json` is copied to the opaque tenant root (`tenant_{tenant_id}`) and patched with `tenantId` plus `tenantDomain`. `app/config.json` is copied into the opaque app root (`app_{app_id}`) and patched with `appId` plus `appName`, then consumed by the tenancy scanner for app-level settings. Any `.json` files under `app/routes/` are merged into the app's `routesAvailable` set during scan.
+It does not define an application anymore. It only provides:
 
-Expected app routes:
+- the tenant-level `config.json`
+- the `ehecoatlVersion` property
+- basic shared HTTP middlewares
+- basic shared WS middlewares
 
-- `/` redirects to `/htm/index.htm`
-- `/htm/{filename}.htm` serves `assets/htm/{filename}.htm`
-- `/session` executes `pointsTo: "run > session@index"` with `session: true`
-- `/post-data` executes `pointsTo: "run > post-data@index"` for POST request-body examples
-- `/{action}` executes `pointsTo: "run > {action}@index"`
+`config.json` is copied to the opaque tenant root (`tenant_{tenant_id}`) and patched with runtime tenant metadata when the tenant is created.
 
-Expected smoke responses:
-
-- `GET /` returns a redirect to `/htm/index.htm`
-- `GET /htm/index.htm` returns `200` with the HTML hello-world page
-- `GET /htm/cached.htm` returns `200` with the cacheable HTML example page
-- `GET /session` returns `200` with JSON containing:
-  - `message: "session hello world"`
-  - `sessionId: "<session cookie value or null>"`
-  - `sessionData: "<loaded session payload object>"`
-  - `timestampUtc: "<current UTC ISO timestamp>"`
-- `POST /post-data` returns `200` with JSON containing:
-  - `message: "post data received"`
-  - `method: "POST"`
-  - `dataReceived: "<parsed request body object>"`
-  - `timestampUtc: "<current UTC ISO timestamp>"`
-- `GET /hello` returns `200` with JSON containing:
-- `message: "hello world"`
-  - `timestampUtc: "<current UTC ISO timestamp>"`
+The Empty Tenant Kit is intended to be a clean tenant foundation. App definitions, app routes, app assets, app actions, and smoke-test examples belong to app kits, not to this tenant kit.
 
 Kit structure:
 
 - `config.json`
-- `.ehecoatl/`
-- `.ehecoatl/lib/nginx.e.conf`
-- `shared/config/`
-- `shared/app/http/actions/`
 - `shared/app/http/middlewares/`
-- `shared/app/ws/actions/`
 - `shared/app/ws/middlewares/`
-- `shared/app/utils/`
-- `shared/app/scripts/`
-- `shared/assets/`
-- `shared/plugins/`
-- `shared/routes/`
-- `app/config.json`
-- `app/index.js`
-- `app/http/actions/hello.js`
-- `app/http/actions/post-data.js`
-- `app/http/actions/session.js`
-- `app/http/middlewares/`
-- `app/ws/actions/`
-- `app/ws/middlewares/`
-- `app/routes/base.json`
-- `app/assets/static/htm/index.htm`
-- `app/assets/static/htm/cached.htm`
-- `app/.ehecoatl/.backups`
-- `app/.ehecoatl/.cache`
-- `app/.ehecoatl/.lib`
-- `app/.ehecoatl/.log`
-- `app/.ehecoatl/.spool`
-- `app/.ehecoatl/.ssh`
-- `app/.ehecoatl/.tmp`
 
-The `.ehecoatl/` folder groups tenant-local system files into one place so the app root stays cleaner and operational directories are clearly separated from application code and assets.
+## Tenant Config
 
-`nginx.e.conf` is the tenant-owned nginx vhost template. The web-server service clones it into nginx-managed config on every source update, replacing runtime tokens while preserving tenant customizations.
+The bundled `config.json` defines the minimal version contract for new tenants:
 
-Shared tenant app code and assets can live under:
+- `ehecoatlVersion`: expected Ehecoatl runtime version for this tenant kit
 
-- `shared/app/http/actions`
-- `shared/app/ws/actions`
-- `shared/app/utils`
-- `shared/app/scripts`
-- `shared/assets`
+Additional tenant metadata such as `tenantId`, `tenantDomain`, routing mode, and app configuration may be injected or managed by the runtime, scanner, registry, or app-specific kits depending on the installed setup.
 
-This allows app-local-first fallback to tenant shared actions and assets when the app does not ship its own copy.
+## Shared Middlewares
 
-## Session Behavior
+Shared tenant middleware code can live under:
 
-`sessionData` is the mutable session payload object exposed to middleware and actions.
+- `shared/app/http/middlewares`
+- `shared/app/ws/middlewares`
 
-Current helper surface:
+These folders provide tenant-level reusable middleware that can be used by apps installed into the tenant when the app does not ship its own local middleware implementation.
 
-- `sessionData.get(key, defaultValue?)`
-- `sessionData.set(key, value)`
-- `sessionData.markDirty()`
-- `sessionData.setAuth(...)`
-- `sessionData.regenerateCsrfToken()`
-- `sessionData.destroySession()`
+## Purpose
 
-Persistence rules:
+The `.ehecoatl` tenant runtime and operational structure, app roots, app routes, and application files are expected to be created or managed outside this minimal kit.
 
-- JSON-compatible enumerable values persist
-- helper functions do not persist
-- keys starting with `__` do not persist
+This keeps the Empty Tenant Kit focused on one responsibility:
 
-HTTP requests load and persist session state through the cache-backed `session` middleware. WS messages now follow the same cache-backed pattern through the `ws-message` middleware, including state updates made by WS actions.
-
-Custom tenant/app HTTP middleware scripts belong under the corresponding `http/middlewares/` folders. Route fragments belong under `app/routes/`, where each `.json` file can define part of the app route map and will be merged into `routesAvailable` during tenant scan.
-
-Tenant route targets now use a single `pointsTo` field. Supported forms are:
-
-- `run > {resource}@{action}`
-- `asset > relative/file.ext`
-- `redirect > /some/path`
-- `redirect 301 > https://example.com`
-
-Spaces around `>` are allowed, but the bundled examples use the normalized `type > target` form.
-
-The bundled `config.json` sets the default domain routing contract for new tenants:
-
-- `tenantId`: opaque 12-character tenant identifier injected at creation time
-- `tenantDomain`: human-readable domain identity used for routing
-- `appRoutingMode`: `subdomain` or `path`
-- `defaultAppName`: default app fallback for that domain
+> provide the smallest possible tenant baseline compatible with a given Ehecoatl runtime version.

@@ -1,4 +1,4 @@
-# Empty Tenant Kit
+# Ehecoatl Empty Tenant Kit
 
 This tenant kit defines the minimal versioned tenant baseline for Ehecoatl.
 

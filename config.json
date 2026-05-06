@@ -3,5 +3,5 @@
   "certbotEmail": null,
   "appRoutingMode": "subdomain",
   "defaultAppName": "www",
-  "ehecoatlVersion": "0.1.x"
+  "ehecoatlVersion": "0.2.x"
 }
